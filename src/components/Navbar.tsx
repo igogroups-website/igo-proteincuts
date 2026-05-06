@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, ShoppingBag, Menu, X, User, Heart, Mic, Crown, TrendingUp } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, User, Heart, Mic, Crown, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
 import WishlistDrawer from './WishlistDrawer';
@@ -111,8 +111,18 @@ const Navbar = () => {
               placeholder="Search chicken, mutton, fish..."
               className="w-full pl-10 pr-10 py-2.5 bg-neutral-100 rounded-xl text-sm border border-transparent focus:border-igo-green/40 focus:bg-white focus:outline-none transition-all"
             />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-igo-green transition-colors">
-              <Mic className="w-4 h-4" />
+            <button 
+              onClick={() => {
+                if (searchQuery) {
+                  window.dispatchEvent(new CustomEvent('searchAI', { detail: searchQuery }));
+                } else {
+                  window.dispatchEvent(new CustomEvent('openAI'));
+                }
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-igo-green transition-colors"
+              title="Search with AI"
+            >
+              <Sparkles className="w-4 h-4" />
             </button>
           </div>
 

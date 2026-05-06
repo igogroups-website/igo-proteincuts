@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import DeliveryBar from './components/DeliveryBar';
 import Hero from './sections/Hero';
@@ -28,6 +29,16 @@ import AIAssistant from './components/AIAssistant';
 import CrossSellModal from './components/CrossSellModal';
 import FloatingCheckoutBar from './components/FloatingCheckoutBar';
 import { CheckCircle2 } from 'lucide-react';
+
+// Admin Pages
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminLayout from './pages/admin/AdminLayout';
+import DashboardOverview from './pages/admin/DashboardOverview';
+import ProductManagement from './pages/admin/ProductManagement';
+import SystemSettings from './pages/admin/SystemSettings';
+import Analytics from './pages/admin/Analytics';
+import CustomerManagement from './pages/admin/CustomerManagement';
+import AdminHelp from './pages/admin/AdminHelp';
 
 const Notification = () => {
   const { notification, setNotification } = useCart();
@@ -63,7 +74,7 @@ const Notification = () => {
   );
 };
 
-function AppContent() {
+function Home() {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -73,18 +84,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen selection:bg-igo-green/30">
-      {/* Scroll Progress */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-[3px] bg-igo-green z-[60] origin-left"
         style={{ scaleX }}
       />
-
-      {/* Top delivery bar */}
       <DeliveryBar />
-
-      {/* Navbar */}
       <Navbar />
-
       <main>
         <Hero />
         <CategoryGrid />
@@ -105,25 +110,12 @@ function AppContent() {
         <Blog />
         <Newsletter />
       </main>
-
       <Footer />
-
-      {/* Cart Drawer */}
       <CartDrawer />
-
-      {/* Floating Checkout Bar */}
       <FloatingCheckoutBar />
-
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
-
-      {/* Cart Added Notification */}
       <Notification />
-
-      {/* AI Meat Assistant */}
       <AIAssistant />
-
-      {/* Cross-sell Success Modal */}
       <CrossSellModal />
     </div>
   );
@@ -132,7 +124,25 @@ function AppContent() {
 export default function App() {
   return (
     <CartProvider>
-      <AppContent />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardOverview />} />
+          <Route path="products" element={<ProductManagement />} />
+          <Route path="orders" element={<div className="p-8"><h1 className="text-2xl font-bold">Order Management</h1><p className="text-neutral-500">Coming soon...</p></div>} />
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="promotions" element={<div className="p-8"><h1 className="text-2xl font-bold">Promotions & Offers</h1><p className="text-neutral-500">Coming soon...</p></div>} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="content" element={<div className="p-8"><h1 className="text-2xl font-bold">Content Management</h1><p className="text-neutral-500">Coming soon...</p></div>} />
+          <Route path="settings" element={<SystemSettings />} />
+          <Route path="help" element={<AdminHelp />} />
+        </Route>
+      </Routes>
     </CartProvider>
   );
 }

@@ -33,3 +33,26 @@ export const sendEmailOTP = async (email: string, otp: string, userName: string)
     return { success: false, error };
   }
 };
+
+export const syncUserProfile = async (email: string, name: string) => {
+  try {
+    const { supabase } = await import('../lib/supabase');
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert({ 
+        email, 
+        name,
+        last_login: new Date().toISOString()
+      }, {
+        onConflict: 'email'
+      });
+
+    if (error) throw error;
+    console.log('User profile synced to Supabase:', data);
+    return { success: true };
+  } catch (error) {
+    console.error('Supabase Sync Error:', error);
+    return { success: false, error };
+  }
+};

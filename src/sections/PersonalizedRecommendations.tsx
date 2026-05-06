@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Heart, Sparkles, History, ArrowRight, ShoppingBag, Star } from 'lucide-react';
-import { useCart, Product } from '../context/CartContext';
-import { products } from './ProductGrid';
+import { useCart } from '../context/CartContext';
+import { Product } from '../types/product';
+import { staticProducts as products } from '../data/staticProducts';
 
 const PersonalizedRecommendations = () => {
   const { wishlist, addToCart, cart } = useCart();

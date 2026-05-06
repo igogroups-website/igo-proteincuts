@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Star, ShoppingBag, Heart, Zap, Shield, Truck, Award, Plus, Minus, Dumbbell, Sparkles } from 'lucide-react';
-import { useCart, Product } from '../context/CartContext';
+import { useCart } from '../context/CartContext';
+import { Product } from '../types/product';
 
 interface QuickViewModalProps {
   product: Product | null;

@@ -22,6 +22,33 @@ const AIAssistant = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const handleSearchAI = (e: any) => {
+      const query = e.detail;
+      setIsOpen(true);
+      if (query) {
+        setInput(query);
+        // We need a small delay to ensure the input is set before sending
+        setTimeout(() => {
+          const sendBtn = document.getElementById('ai-send-button');
+          sendBtn?.click();
+        }, 100);
+      }
+    };
+
+    const handleOpenAI = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener('searchAI', handleSearchAI);
+    window.addEventListener('openAI', handleOpenAI);
+    
+    return () => {
+      window.removeEventListener('searchAI', handleSearchAI);
+      window.removeEventListener('openAI', handleOpenAI);
+    };
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -180,6 +207,7 @@ const AIAssistant = () => {
                   className="flex-1 px-4 py-3 text-sm focus:outline-none"
                 />
                 <button
+                  id="ai-send-button"
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading}
                   className="w-10 h-10 bg-igo-green text-white rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50"

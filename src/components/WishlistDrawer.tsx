@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingBag, Trash2, HeartCrack } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { products } from '../sections/ProductGrid';
+import { staticProducts as products } from '../data/staticProducts';
 
 interface WishlistDrawerProps {
   isOpen: boolean;

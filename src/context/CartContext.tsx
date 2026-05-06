@@ -1,34 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-
-export interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  unit?: string;
-  category: string;
-  badge?: string;
-  isPremium?: boolean;
-  description?: string;
-  rating?: number;
-  reviewCount?: number;
-  soldToday?: number;
-  stockLeft?: number;
-  weightOptions?: { label: string; priceMultiplier: number }[];
-  idealFor?: string[];
-  chefTip?: string;
-  protein?: string;
-  piecesPerKg?: string;
-  selectedWeight?: string;
-}
+import { Product } from '../types/product';
 
 export interface CartItem extends Product {
   quantity: number;
   selectedWeight: string;
   finalPrice: number;
 }
-
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, weight?: string) => void;

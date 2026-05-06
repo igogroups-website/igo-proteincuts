@@ -8,7 +8,7 @@ interface AuthModalProps {
   onLoginSuccess: () => void;
 }
 
-import { generateOTP, sendEmailOTP } from '../services/authService';
+import { generateOTP, sendEmailOTP, syncUserProfile } from '../services/authService';
 
 const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
   const [step, setStep] = useState<'details' | 'otp' | 'success'>('details');
@@ -66,6 +66,10 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
         email: formData.email,
         isAuthenticated: true
       }));
+      
+      // Sync to Supabase for persistent database storage
+      syncUserProfile(formData.email, formData.name);
+
       setTimeout(() => {
         onLoginSuccess();
       }, 1500);
