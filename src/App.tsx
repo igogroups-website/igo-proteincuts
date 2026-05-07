@@ -129,20 +129,13 @@ export default function App() {
   return (
     <CartProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/review/:orderId" element={<OrderReview />} />
-        <Route path="/blog" element={<BlogPage />} />
-        
-        {/* Admin Routes */}
+        {/* Admin Routes - Defined first to ensure priority */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardOverview />} />
           <Route path="products" element={<ProductManagement />} />
           <Route path="orders" element={<OrderManagement />} />
-
-
           <Route path="customers" element={<CustomerManagement />} />
           <Route path="promotions" element={<div className="p-8"><h1 className="text-2xl font-bold">Promotions & Offers</h1><p className="text-neutral-500">Coming soon...</p></div>} />
           <Route path="analytics" element={<Analytics />} />
@@ -150,6 +143,14 @@ export default function App() {
           <Route path="settings" element={<SystemSettings />} />
           <Route path="help" element={<AdminHelp />} />
         </Route>
+
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/review/:orderId" element={<OrderReview />} />
+        <Route path="/blog" element={<BlogPage />} />
+        
+        {/* Fallback Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </CartProvider>
   );

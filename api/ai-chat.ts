@@ -6,8 +6,11 @@ export default async function handler(req: any, res: any) {
   const { message, systemPrompt } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!apiKey) {
-    return res.status(500).json({ error: 'AI API Key not configured' });
+  if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("MY_GEMINI")) {
+    console.error("AI API Error: GEMINI_API_KEY is missing or invalid");
+    return res.status(500).json({ 
+      error: 'AI API Key not configured. Please add GEMINI_API_KEY to Vercel Environment Variables.' 
+    });
   }
 
   try {

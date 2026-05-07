@@ -325,8 +325,17 @@ const Navbar = () => {
                   onChange={handleSearchChange}
                   placeholder="Search chicken, mutton, fish..."
                   autoFocus
-                  className="w-full pl-10 pr-4 py-3 bg-neutral-100 rounded-xl text-sm border border-transparent focus:border-igo-green/40 focus:bg-white focus:outline-none transition-all"
+                  className="w-full pl-10 pr-12 py-3 bg-neutral-100 rounded-xl text-sm border border-transparent focus:border-igo-green/40 focus:bg-white focus:outline-none transition-all"
                 />
+                <button 
+                  onClick={handleVoiceSearch}
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2 p-2 transition-all",
+                    isListening ? "text-red-500 scale-125 animate-pulse" : "text-neutral-400 hover:text-igo-green"
+                  )}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </motion.div>

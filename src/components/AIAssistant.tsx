@@ -58,22 +58,7 @@ const AIAssistant = () => {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      
-      if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("MY_GEMINI")) {
-        // Fallback mock responses
-        setTimeout(() => {
-          let response = "I'm currently in demo mode. I'd recommend our Fresh Farm Chicken or Mutton Curry Cuts for a great meal! Would you like a recipe?";
-          if (userMessage.toLowerCase().includes('recipe')) {
-            response = "For a classic Mutton Curry: 1. Sear the meat with onions. 2. Add ginger-garlic paste and spices. 3. Pressure cook for 4 whistles. Use our Heritage Mutton Cuts for best results!";
-          }
-          setMessages(prev => [...prev, { role: 'bot', text: response }]);
-          setIsLoading(false);
-        }, 1000);
-        return;
-      }
-
-      // Live Gemini Implementation via Server Proxy (Solves CORS)
+      // Always use the Server Proxy (Solves CORS and protects API keys)
       const systemPrompt = `You are the IGO Culinary Expert for "IGO Protein Cuts". 
       Your goal is to help customers choose the best meat cuts and provide professional recipes.
       
@@ -98,6 +83,12 @@ const AIAssistant = () => {
       const data = await res.json();
       
       if (data.error) {
+        // Log the error but provide a friendly message to the user
+        console.error("AI Proxy Data Error:", data.error);
+        if (data.error.includes("API Key")) {
+           setMessages(prev => [...prev, { role: 'bot', text: "The AI service is currently being configured by our team. Please try again in a few minutes!" }]);
+           return;
+        }
         throw new Error(data.error);
       }
 

@@ -5,10 +5,13 @@ import nodemailer from 'nodemailer';
  * Initializing inside a function ensures environment variables are loaded before use.
  */
 const getTransporter = () => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    throw new Error('Email credentials (GMAIL_USER/GMAIL_PASS) are not configured in environment variables.');
+  }
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
-    secure: true, // Use SSL/TLS
+    secure: true,
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_PASS,
