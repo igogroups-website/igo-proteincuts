@@ -26,6 +26,21 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [globalSearch, setGlobalSearch] = useState('');
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!globalSearch.trim()) return;
+    
+    const query = globalSearch.trim().toLowerCase();
+    // If query looks like an order (contains numbers or 'igo')
+    if (query.includes('igo') || /\d/.test(query)) {
+      navigate(`/admin/orders?search=${encodeURIComponent(query)}`);
+    } else {
+      navigate(`/admin/customers?search=${encodeURIComponent(query)}`);
+    }
+    setGlobalSearch('');
+  };
+
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -204,7 +219,6 @@ const AdminLayout = () => {
           isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
         }`}
       >
-        {/* Header */}
         <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-neutral-200 z-40 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -213,14 +227,16 @@ const AdminLayout = () => {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="relative hidden md:block">
+            <form onSubmit={handleSearch} className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input 
                 type="text" 
-                placeholder="Search orders, products..."
+                placeholder="Search orders, customers..."
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
                 className="bg-neutral-100 border-none rounded-xl pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-igo-green/20 transition-all"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-3 lg:gap-6">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X, User, Heart, Mic, Crown, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
@@ -8,12 +9,12 @@ import ProfileModal from './ProfileModal';
 import AuthModal from './AuthModal';
 
 const BrandLogo = ({ light = false }) => (
-  <a href="/" className="flex items-center gap-3 group">
-    <div className="relative w-14 h-14 overflow-hidden rounded-full border border-neutral-100 bg-white flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+  <Link to="/" className="flex items-center gap-3 group">
+    <div className="relative w-14 h-14 overflow-hidden rounded-full bg-white flex items-center justify-center transition-transform group-hover:scale-105 duration-300 shadow-lg">
       <img 
         src="/logo.png" 
         alt="Protein Cuts Logo" 
-        className="w-full h-full object-cover scale-110"
+        className="w-full h-full object-cover"
       />
     </div>
     <div className="flex flex-col">
@@ -24,7 +25,7 @@ const BrandLogo = ({ light = false }) => (
         Unit of IGO Group
       </span>
     </div>
-  </a>
+  </Link>
 );
 
 const Navbar = () => {
@@ -35,8 +36,59 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isListening, setIsListening] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const { cartCount, setIsCartOpen, wishlist } = useCart();
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice search is not supported in this browser. Please use Chrome or Safari.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+    
+    setIsListening(true);
+
+    recognition.onstart = () => {
+      console.log("Voice recognition started...");
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log("Speech captured:", transcript);
+      setSearchQuery(transcript);
+      window.dispatchEvent(new CustomEvent('searchQuery', { detail: transcript }));
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Voice recognition error:", event.error);
+      if (event.error === 'no-speech') {
+        // Silent fail or brief retry
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      console.log("Voice recognition ended.");
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Failed to start recognition:", e);
+      setIsListening(false);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -47,7 +99,11 @@ const Navbar = () => {
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
-        if (user.isAuthenticated) setIsAuthenticated(true);
+        if (user.isAuthenticated) {
+          setIsAuthenticated(true);
+          setUser(user);
+        }
+
       } catch (e) {
         console.error("Failed to parse saved user", e);
       }
@@ -79,12 +135,12 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: 'Products', href: '#products' },
-    { name: 'Traceability', href: '#traceability' },
-    { name: 'B2B', href: '#b2b' },
-    { name: 'About', href: '#about' },
-    { name: 'Blog', href: '#blog' },
-    { name: 'Prime', href: '#prime', highlight: true },
+    { name: 'Products', href: '/#products' },
+    { name: 'Traceability', href: '/#traceability' },
+    { name: 'B2B', href: '/#b2b' },
+    { name: 'About', href: '/#about' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'Prime', href: '/#prime', highlight: true },
   ];
 
   return (
@@ -112,17 +168,14 @@ const Navbar = () => {
               className="w-full pl-10 pr-10 py-2.5 bg-neutral-100 rounded-xl text-sm border border-transparent focus:border-igo-green/40 focus:bg-white focus:outline-none transition-all"
             />
             <button 
-              onClick={() => {
-                if (searchQuery) {
-                  window.dispatchEvent(new CustomEvent('searchAI', { detail: searchQuery }));
-                } else {
-                  window.dispatchEvent(new CustomEvent('openAI'));
-                }
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-igo-green transition-colors"
-              title="Search with AI"
+              onClick={handleVoiceSearch}
+              className={cn(
+                "absolute right-3 top-1/2 -translate-y-1/2 transition-all",
+                isListening ? "text-red-500 scale-125 animate-pulse" : "text-neutral-400 hover:text-igo-green"
+              )}
+              title="Voice Search (Tamil/English)"
             >
-              <Sparkles className="w-4 h-4" />
+              <Mic className="w-4 h-4" />
             </button>
           </div>
 
@@ -157,21 +210,25 @@ const Navbar = () => {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className={cn(
-                "text-sm font-medium transition-all flex items-center gap-1.5",
-                link.highlight 
-                  ? "text-igo-gold hover:text-igo-gold/80 font-bold px-3 py-1.5 bg-igo-gold/10 rounded-lg animate-pulse" 
-                  : "text-neutral-600 hover:text-igo-green"
-              )}
-            >
-              {link.highlight && <Crown className="w-3.5 h-3.5 fill-igo-gold" />}
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const LinkComponent: any = link.href.startsWith('/#') ? 'a' : Link;
+            return (
+              <LinkComponent
+                key={link.name}
+                to={link.href.startsWith('/#') ? undefined : link.href}
+                href={link.href.startsWith('/#') ? link.href : undefined}
+                className={cn(
+                  "text-sm font-medium transition-all flex items-center gap-1.5",
+                  link.highlight 
+                    ? "text-igo-gold hover:text-igo-gold/80 font-bold px-3 py-1.5 bg-igo-gold/10 rounded-lg animate-pulse" 
+                    : "text-neutral-600 hover:text-igo-green"
+                )}
+              >
+                {link.highlight && <Crown className="w-3.5 h-3.5 fill-igo-gold" />}
+                {link.name}
+              </LinkComponent>
+            );
+          })}
         </div>
 
         {/* Actions */}
@@ -200,13 +257,23 @@ const Navbar = () => {
           {/* Account */}
           <button 
             onClick={handleProfileClick}
-            className="hidden sm:flex w-9 h-9 rounded-xl bg-neutral-100 items-center justify-center text-neutral-600 hover:text-igo-green transition-colors relative"
+            className="hidden sm:flex w-9 h-9 rounded-xl bg-neutral-100 items-center justify-center text-neutral-600 hover:text-igo-green transition-colors relative overflow-hidden group"
           >
-            <User className="w-4 h-4" />
+            {isAuthenticated && user?.avatar_url ? (
+              <img 
+                src={user.avatar_url} 
+                alt="Profile" 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+              />
+            ) : (
+              <User className="w-4 h-4" />
+            )}
+
             {isAuthenticated && (
               <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-igo-green rounded-full border-2 border-white" />
             )}
           </button>
+
 
           {/* Cart */}
           <button

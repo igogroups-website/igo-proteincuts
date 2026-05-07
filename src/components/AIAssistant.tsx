@@ -60,14 +60,12 @@ const AIAssistant = () => {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       
-      if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-        // Fallback mock responses for high-fidelity demonstration
+      if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("MY_GEMINI")) {
+        // Fallback mock responses
         setTimeout(() => {
           let response = "I'm currently in demo mode. I'd recommend our Fresh Farm Chicken or Mutton Curry Cuts for a great meal! Would you like a recipe?";
           if (userMessage.toLowerCase().includes('recipe')) {
             response = "For a classic Mutton Curry: 1. Sear the meat with onions. 2. Add ginger-garlic paste and spices. 3. Pressure cook for 4 whistles. Use our Heritage Mutton Cuts for best results!";
-          } else if (userMessage.toLowerCase().includes('protein')) {
-            response = "Our Chicken Breast is a fitness favorite with 26g of protein per 100g. It's never frozen and delivered fresh!";
           }
           setMessages(prev => [...prev, { role: 'bot', text: response }]);
           setIsLoading(false);
@@ -75,30 +73,40 @@ const AIAssistant = () => {
         return;
       }
 
-      const genAI = new GoogleGenAI({ apiKey });
+      // Live Gemini Implementation via Server Proxy (Solves CORS)
+      const systemPrompt = `You are the IGO Culinary Expert for "IGO Protein Cuts". 
+      Your goal is to help customers choose the best meat cuts and provide professional recipes.
       
-      const prompt = `You are the IGO Meat Assistant for "IGO Protein Cuts". 
-      A premium meat delivery service in India. 
-      The user says: "${userMessage}"
+      OUR PRODUCTS: Chicken (Whole, Breast, Naattu Kozhi), Mutton (Curry Cut, Keema), Fish (Vanjaram, Salmon), Seafood (Crab, Prawns).
+      OUR STANDARDS: 100% Traceable, Never Frozen, Antibiotic-Free, Farm-Fresh to home within 120 mins.
       
-      RULES:
-      1. Suggest specific IGO cuts: Chicken Breast, Mutton Curry Cut, Vanjaram Steaks, Nattu Kozhi Eggs.
-      2. Mention quality: 100% Traceable, Never Frozen, Farm-to-Fork.
-      3. If they ask for a recipe, give a brief 3-step guide and list the products.
-      4. Professional, helpful, and appetizing tone.
-      
-      Keep it concise (max 3 sentences).`;
+      GUIDELINES:
+      1. Give detailed, chef-quality recipes using IGO cuts.
+      2. Always emphasize freshness and "Never Frozen" quality.
+      3. Use markdown (bold, lists) for clarity.
+      4. Tone: Premium, helpful, and passionate.`;
 
-      const response = await genAI.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: prompt,
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          systemPrompt: systemPrompt
+        })
       });
-      const text = response.text;
+
+      const data = await res.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const text = data.text || "I'm here to help with your premium protein needs! What's cooking today?";
 
       setMessages(prev => [...prev, { role: 'bot', text }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'bot', text: "I'm having a little trouble connecting right now. But I'd love to help you with our premium cuts!" }]);
+      setMessages(prev => [...prev, { role: 'bot', text: "I'm having a slight connection issue with the farm server. Please try asking again in a few seconds!" }]);
     } finally {
       setIsLoading(false);
     }

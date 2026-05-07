@@ -39,6 +39,10 @@ import SystemSettings from './pages/admin/SystemSettings';
 import Analytics from './pages/admin/Analytics';
 import CustomerManagement from './pages/admin/CustomerManagement';
 import AdminHelp from './pages/admin/AdminHelp';
+import OrderManagement from './pages/admin/OrderManagement';
+import OrderReview from './pages/OrderReview';
+import BlogPage from './pages/Blog';
+
 
 const Notification = () => {
   const { notification, setNotification } = useCart();
@@ -126,6 +130,8 @@ export default function App() {
     <CartProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/review/:orderId" element={<OrderReview />} />
+        <Route path="/blog" element={<BlogPage />} />
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -134,7 +140,9 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardOverview />} />
           <Route path="products" element={<ProductManagement />} />
-          <Route path="orders" element={<div className="p-8"><h1 className="text-2xl font-bold">Order Management</h1><p className="text-neutral-500">Coming soon...</p></div>} />
+          <Route path="orders" element={<OrderManagement />} />
+
+
           <Route path="customers" element={<CustomerManagement />} />
           <Route path="promotions" element={<div className="p-8"><h1 className="text-2xl font-bold">Promotions & Offers</h1><p className="text-neutral-500">Coming soon...</p></div>} />
           <Route path="analytics" element={<Analytics />} />

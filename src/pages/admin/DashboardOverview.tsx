@@ -1,15 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { 
-  TrendingUp, 
-  Users, 
-  ShoppingBag, 
-  IndianRupee,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  ExternalLink
-} from 'lucide-react';
+import { IndianRupee, ShoppingBag, Users, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, ExternalLink } from 'lucide-react';
+import { getOrders } from '../../services/orderService';
+
 
 const StatCard = ({ title, value, change, trend, icon: Icon, color }: any) => (
   <motion.div 
@@ -34,20 +27,33 @@ const StatCard = ({ title, value, change, trend, icon: Icon, color }: any) => (
 );
 
 const DashboardOverview = () => {
-  const stats = [
-    { title: 'Total Revenue', value: '₹12,45,200', change: '+12.5%', trend: 'up', icon: IndianRupee, color: 'bg-igo-green' },
-    { title: 'Active Orders', value: '142', change: '+8.2%', trend: 'up', icon: ShoppingBag, color: 'bg-blue-500' },
-    { title: 'New Customers', value: '1,284', change: '-2.4%', trend: 'down', icon: Users, color: 'bg-igo-gold' },
-    { title: 'Avg. Order Value', value: '₹850', change: '+4.1%', trend: 'up', icon: TrendingUp, color: 'bg-purple-500' },
-  ];
+  const [orders, setOrders] = React.useState<any[]>([]);
+  const [stats, setStats] = React.useState([
+    { title: 'Total Revenue', value: '₹0', change: '0%', trend: 'up', icon: IndianRupee, color: 'bg-igo-green' },
+    { title: 'Active Orders', value: '0', change: '0%', trend: 'up', icon: ShoppingBag, color: 'bg-blue-500' },
+    { title: 'New Customers', value: '0', change: '0%', trend: 'up', icon: Users, color: 'bg-igo-gold' },
+    { title: 'Avg. Order Value', value: '₹0', change: '0%', trend: 'up', icon: TrendingUp, color: 'bg-purple-500' },
+  ]);
 
-  const recentOrders = [
-    { id: '#ORD-7821', customer: 'Arun Kumar', status: 'Delivered', amount: '₹1,250', date: '2 mins ago' },
-    { id: '#ORD-7820', customer: 'Priya Dharshini', status: 'Processing', amount: '₹890', date: '15 mins ago' },
-    { id: '#ORD-7819', customer: 'Rajesh V', status: 'Shipped', amount: '₹2,100', date: '45 mins ago' },
-    { id: '#ORD-7818', customer: 'Suresh Raina', status: 'Delivered', amount: '₹450', date: '1 hour ago' },
-    { id: '#ORD-7817', customer: 'Meera Bai', status: 'Pending', amount: '₹1,560', date: '2 hours ago' },
-  ];
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const { getAnalytics, getOrders } = await import('../../services/orderService');
+      const data = await getOrders();
+      const analytics = await getAnalytics();
+      
+      setOrders(data.slice(0, 5));
+      
+      setStats([
+        { title: 'Total Revenue', value: `₹${analytics.totalRevenue.toLocaleString()}`, change: 'Live', trend: 'up', icon: IndianRupee, color: 'bg-igo-green' },
+        { title: 'Active Orders', value: analytics.activeOrders.toString(), change: 'Live', trend: 'up', icon: ShoppingBag, color: 'bg-blue-500' },
+        { title: 'Total Transactions', value: analytics.totalOrders.toString(), change: 'Live', trend: 'up', icon: Users, color: 'bg-igo-gold' },
+        { title: 'Avg. Order Value', value: `₹${Math.round(analytics.totalRevenue / (analytics.totalOrders || 1)).toLocaleString()}`, change: 'Live', trend: 'up', icon: TrendingUp, color: 'bg-purple-500' },
+      ]);
+    };
+    fetchData();
+  }, []);
+
+
 
   return (
     <div className="space-y-8">
@@ -85,32 +91,39 @@ const DashboardOverview = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-neutral-50/50 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-sm text-neutral-800">{order.id}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-500">
-                          {order.customer.charAt(0)}
-                        </div>
-                        <span className="text-sm font-medium text-neutral-600">{order.customer}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-600' :
-                        order.status === 'Processing' ? 'bg-blue-100 text-blue-600' :
-                        order.status === 'Shipped' ? 'bg-purple-100 text-purple-600' :
-                        'bg-orange-100 text-orange-600'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-sm text-neutral-800">{order.amount}</td>
-                    <td className="px-6 py-4 text-xs text-neutral-400 font-medium">{order.date}</td>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-neutral-400 italic">No live orders found.</td>
                   </tr>
-                ))}
+                ) : (
+                  orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-neutral-50/50 transition-colors group">
+                      <td className="px-6 py-4 font-bold text-sm text-neutral-800">#{order.id.slice(0, 8)}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-500">
+                            {order.customer_name?.charAt(0) || 'G'}
+                          </div>
+                          <span className="text-sm font-medium text-neutral-600">{order.customer_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-600' :
+                          order.status === 'Processing' ? 'bg-blue-100 text-blue-600' :
+                          order.status === 'Shipped' ? 'bg-purple-100 text-purple-600' :
+                          'bg-orange-100 text-orange-600'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-sm text-neutral-800">₹{order.amount}</td>
+                      <td className="px-6 py-4 text-xs text-neutral-400 font-medium">{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
+
             </table>
           </div>
         </div>

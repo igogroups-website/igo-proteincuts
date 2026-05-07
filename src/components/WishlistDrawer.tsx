@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingBag, Trash2, HeartCrack } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { staticProducts as products } from '../data/staticProducts';
+import { loadProducts } from '../services/productStore';
 
 interface WishlistDrawerProps {
   isOpen: boolean;
@@ -11,8 +11,16 @@ interface WishlistDrawerProps {
 
 const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
   const { wishlist, toggleWishlist, addToCart } = useCart();
+  const [products, setProducts] = React.useState<any[]>(loadProducts());
+
+  useEffect(() => {
+    if (isOpen) {
+      setProducts(loadProducts());
+    }
+  }, [isOpen]);
 
   const wishlistedItems = products.filter(p => wishlist.includes(p.id));
+
 
   // Lock body scroll when open
   useEffect(() => {

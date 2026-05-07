@@ -7,3 +7,10 @@ coverage/
 .env*
 !.env.example
 .vite/
+scratch/
+*.js
+*.cjs
+*.mjs
+!api/*.ts
+!src/**/*.ts
+!src/**/*.tsx

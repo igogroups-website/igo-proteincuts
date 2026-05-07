@@ -33,15 +33,23 @@ const ChartBar = ({ height, label, active }: any) => (
 );
 
 const Analytics = () => {
-  const weeklyData = [
-    { label: 'Mon', height: 45 },
-    { label: 'Tue', height: 65 },
-    { label: 'Wed', height: 55 },
-    { label: 'Thu', height: 85, active: true },
-    { label: 'Fri', height: 70 },
-    { label: 'Sat', height: 95 },
-    { label: 'Sun', height: 80 },
-  ];
+  const [data, setData] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetch = async () => {
+      const { getAnalytics } = await import('../../services/orderService');
+      const stats = await getAnalytics();
+      setData(stats);
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  if (loading) return <div className="p-20 text-center font-bold text-neutral-400">Loading intelligence...</div>;
+
+  const weeklyData = data?.weeklyData || [];
+
 
   return (
     <div className="space-y-8 pb-12">
@@ -76,12 +84,13 @@ const Analytics = () => {
               <p className="text-neutral-400 text-xs mt-1">Growth trends across the current week.</p>
             </div>
             <div className="text-right">
-              <span className="text-3xl font-bold text-neutral-800">₹8,42,000</span>
+              <span className="text-3xl font-bold text-neutral-800">₹{data?.totalRevenue?.toLocaleString()}</span>
               <div className="flex items-center gap-1 text-green-500 text-xs font-bold justify-end mt-1">
                 <ArrowUpRight className="w-3 h-3" />
-                +14.5% vs last week
+                Live Revenue
               </div>
             </div>
+
           </div>
 
           <div className="h-[300px] flex items-end gap-4 md:gap-8 px-4">
@@ -99,11 +108,12 @@ const Analytics = () => {
           </h3>
           <div className="space-y-6 flex-1">
             {[
-              { label: 'Chicken', percentage: 45, color: 'bg-igo-green' },
-              { label: 'Mutton', percentage: 30, color: 'bg-igo-gold' },
-              { label: 'Fish & Sea', percentage: 20, color: 'bg-blue-500' },
-              { label: 'Eggs/Others', percentage: 5, color: 'bg-neutral-600' },
+              { label: 'Chicken', percentage: data?.categoryPercentages?.Chicken || 0, color: 'bg-igo-green' },
+              { label: 'Mutton', percentage: data?.categoryPercentages?.Mutton || 0, color: 'bg-igo-gold' },
+              { label: 'Fish & Sea', percentage: data?.categoryPercentages?.Fish || 0, color: 'bg-blue-500' },
+              { label: 'Others', percentage: data?.categoryPercentages?.Others || 0, color: 'bg-neutral-600' },
             ].map((cat) => (
+
               <div key={cat.label} className="space-y-2">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
                   <span className="text-neutral-400">{cat.label}</span>
@@ -129,10 +139,11 @@ const Analytics = () => {
       {/* Secondary Insights Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Conversion Rate', value: '4.2%', icon: Activity, color: 'text-igo-green' },
-          { label: 'Avg. Fulfillment', value: '72 min', icon: BarChart3, color: 'text-blue-500' },
-          { label: 'Customer LTV', value: '₹14,500', icon: TrendingUp, color: 'text-purple-500' },
-          { label: 'Return Rate', value: '0.8%', icon: Filter, color: 'text-red-500' },
+          { label: 'Active Orders', value: data?.activeOrders || 0, icon: Activity, color: 'text-igo-green' },
+          { label: 'Total Volume', value: data?.totalOrders || 0, icon: BarChart3, color: 'text-blue-500' },
+          { label: 'Gross Revenue', value: `₹${data?.totalRevenue?.toLocaleString()}`, icon: TrendingUp, color: 'text-purple-500' },
+          { label: 'Batch Health', value: '100%', icon: Filter, color: 'text-red-500' },
+
         ].map((insight, i) => (
           <motion.div 
             key={i}

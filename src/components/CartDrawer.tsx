@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, Tag, Zap, Timer, Sparkles, Clock } from 'lucide-react';
+import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, Tag, Zap, Timer, Sparkles, Clock, MapPin, User, Phone, Edit3, Gift, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import DeliverySlotPicker from './DeliverySlotPicker';
 import OneClickCheckout from './OneClickCheckout';
@@ -8,6 +8,34 @@ import OneClickCheckout from './OneClickCheckout';
 const CartDrawer = () => {
   const { cart, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, cartTotal, cartCount } = useCart();
   const [isFastLaneOpen, setIsFastLaneOpen] = React.useState(false);
+  const [isGifting, setIsGifting] = React.useState(false);
+  const [isEditingAddress, setIsEditingAddress] = React.useState(false);
+  
+  // Load saved address
+  const [deliveryAddress, setDeliveryAddress] = React.useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('igo_user') || '{}');
+    return savedUser.address || 'Select delivery address';
+  });
+
+  const [giftDetails, setGiftDetails] = React.useState({
+    name: localStorage.getItem('igo_gift_name') || '',
+    phone: localStorage.getItem('igo_gift_phone') || '',
+    address: localStorage.getItem('igo_gift_address') || ''
+  });
+
+  const saveAddress = (newAddr: string) => {
+    setDeliveryAddress(newAddr);
+    const savedUser = JSON.parse(localStorage.getItem('igo_user') || '{}');
+    localStorage.setItem('igo_user', JSON.stringify({ ...savedUser, address: newAddr }));
+    setIsEditingAddress(false);
+  };
+
+  const updateGiftDetails = (key: keyof typeof giftDetails, value: string) => {
+    const updated = { ...giftDetails, [key]: value };
+    setGiftDetails(updated);
+    localStorage.setItem(`igo_gift_${String(key)}`, value);
+  };
+
 
   const freeDeliveryThreshold = 499;
   const remaining = freeDeliveryThreshold - cartTotal;
@@ -89,11 +117,16 @@ const CartDrawer = () => {
                     <h3 className="font-bold text-xl text-neutral-dark mb-2">Your cart is empty</h3>
                     <p className="text-neutral-400 text-sm mb-8">Add some fresh protein cuts to get started!</p>
                     <button
-                      onClick={() => setIsCartOpen(false)}
-                      className="bg-igo-green text-white px-8 py-3 rounded-xl font-bold hover:bg-igo-green/90 transition-colors"
+                      onClick={() => {
+                        setIsCartOpen(false);
+                        window.location.href = '/#products';
+                      }}
+                      className="bg-igo-green text-white px-8 py-3 rounded-xl font-bold hover:bg-igo-green/90 transition-colors shadow-lg shadow-igo-green/20"
                     >
                       Shop Now
                     </button>
+
+
                   </motion.div>
                 ) : (
                   cart.map((item) => (
@@ -144,32 +177,163 @@ const CartDrawer = () => {
                 )}
               </AnimatePresence>
 
-              {/* Smart Add-ons Section */}
+              {/* Delivery Slot Picker */}
               {cart.length > 0 && (
-                <div className="mt-8 border-t border-neutral-100 pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-4 h-4 text-igo-gold" />
-                    <h4 className="font-bold text-xs uppercase tracking-widest text-neutral-400">Complete Your Meal</h4>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                    {[
-                      { name: 'Tikka Marinade', price: 49, img: 'https://images.unsplash.com/photo-1589187151032-573a91d1707d?w=400' },
-                      { name: 'Farm Eggs (6pk)', price: 60, img: '/images/products/eggs.png' },
-                      { name: 'Curry Powder', price: 35, img: 'https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?w=400' }
-                    ].map((addon, i) => (
-                      <div key={i} className="min-w-[120px] bg-neutral-50 rounded-2xl p-3 border border-neutral-100 flex flex-col items-center text-center">
-                        <img src={addon.img} alt={addon.name} className="w-12 h-12 rounded-lg object-cover mb-2" />
-                        <h5 className="text-[10px] font-bold text-neutral-dark line-clamp-1">{addon.name}</h5>
-                        <p className="text-[10px] text-igo-green font-bold mb-2">₹{addon.price}</p>
-                        <button className="w-full py-1.5 bg-white border border-igo-green/20 text-igo-green text-[9px] font-bold rounded-lg hover:bg-igo-green hover:text-white transition-colors">
-                          Add +
+                <div className="mt-8 border-t border-neutral-100 pt-6 px-4 space-y-6">
+                  <DeliverySlotPicker />
+                  
+                  {/* Advanced Address Management */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-neutral-dark text-sm uppercase tracking-widest flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-igo-green" />
+                        Deliver To
+                      </h4>
+                      {!isEditingAddress && (
+                        <button 
+                          onClick={() => setIsEditingAddress(true)}
+                          className="text-[10px] font-bold text-igo-green uppercase bg-igo-green/5 px-2 py-1 rounded-md hover:bg-igo-green/10 transition-colors flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          Change
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 relative overflow-hidden group">
+                      {isEditingAddress ? (
+                        <div className="space-y-3">
+                          <textarea
+                            autoFocus
+                            value={deliveryAddress}
+                            onChange={(e) => setDeliveryAddress(e.target.value)}
+                            className="w-full bg-white border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-igo-green/20 focus:border-igo-green transition-all"
+                            rows={3}
+                            placeholder="Enter your full delivery address..."
+                          />
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => saveAddress(deliveryAddress)}
+                              className="flex-1 bg-igo-green text-white py-2 rounded-xl text-xs font-bold hover:bg-igo-green/90 transition-colors"
+                            >
+                              Save Address
+                            </button>
+                            <button 
+                              onClick={() => setIsEditingAddress(false)}
+                              className="px-4 py-2 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-500 hover:bg-neutral-100 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <p className="text-sm text-neutral-700 leading-relaxed font-medium">
+                              {deliveryAddress}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="w-2 h-2 bg-igo-green rounded-full animate-pulse" />
+                              <span className="text-[10px] text-neutral-400 font-bold uppercase">Active for this order</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Gifting Section */}
+                    <div className={`rounded-2xl border transition-all duration-300 ${isGifting ? 'bg-indigo-50/30 border-indigo-100 p-4' : 'bg-neutral-50 border-neutral-100 p-4'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg transition-colors ${isGifting ? 'bg-indigo-500 text-white' : 'bg-igo-gold/10 text-igo-gold'}`}>
+                            <Gift className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-neutral-800">Gift this order?</p>
+                            <p className="text-[10px] text-neutral-400">Surprise friends or family</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setIsGifting(!isGifting)}
+                          className={`w-10 h-5 rounded-full transition-all relative ${isGifting ? 'bg-indigo-500' : 'bg-neutral-200'}`}
+                        >
+                          <motion.div 
+                            animate={{ x: isGifting ? 20 : 2 }}
+                            className="absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm"
+                          />
                         </button>
                       </div>
-                    ))}
+
+                      <AnimatePresence>
+                        {isGifting && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pt-6 space-y-4">
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Recipient Name</label>
+                                <div className="relative">
+                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-300" />
+                                  <input 
+                                    type="text"
+                                    value={giftDetails.name}
+                                    onChange={(e) => updateGiftDetails('name', e.target.value)}
+                                    placeholder="Friend's name"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Recipient Mobile</label>
+                                <div className="relative">
+                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-300" />
+                                  <input 
+                                    type="tel"
+                                    value={giftDetails.phone}
+                                    onChange={(e) => updateGiftDetails('phone', e.target.value)}
+                                    placeholder="+91 XXXXX XXXXX"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Recipient Address</label>
+                                <div className="relative">
+                                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-neutral-300" />
+                                  <textarea 
+                                    value={giftDetails.address}
+                                    onChange={(e) => updateGiftDetails('address', e.target.value)}
+                                    placeholder="Enter complete gift address..."
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all min-h-[80px]"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="bg-indigo-500/10 p-3 rounded-xl flex items-center gap-3">
+                                <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
+                                  <Check className="w-4 h-4" />
+                                </div>
+                                <p className="text-[10px] text-indigo-700 font-medium leading-tight">
+                                  We'll include a special surprise note with this order!
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
+
                 </div>
               )}
+
             </div>
+
 
             {/* Footer */}
             {cart.length > 0 && (
@@ -178,10 +342,7 @@ const CartDrawer = () => {
                   <span>Subtotal ({cartCount} items)</span>
                   <span className="font-bold text-neutral-dark">₹{cartTotal}</span>
                 </div>
-                {/* Delivery Slot Picker */}
-                <div className="mb-8 pt-6 border-t border-neutral-100">
-                  <DeliverySlotPicker />
-                </div>
+
 
                 <div className="flex justify-between items-center text-sm text-neutral-500">
                   <span>Delivery</span>

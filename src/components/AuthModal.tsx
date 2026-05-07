@@ -16,8 +16,9 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    otp: ''
   });
+  const [otpValues, setOtpValues] = useState(['', '', '', '']);
+
   const [generatedOTP, setGeneratedOTP] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
   const [showMockHint, setShowMockHint] = useState(false);
@@ -57,18 +58,25 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
 
   const handleVerifyOTP = (e: React.FormEvent) => {
     e.preventDefault();
+    const fullOTP = otpValues.join('');
+    
     // Allow the generated OTP or 1234 for testing
-    if (formData.otp === generatedOTP || formData.otp === '1234') {
+    if (fullOTP === generatedOTP || fullOTP === '1234') {
       setStep('success');
+      
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=2D5A27&color=fff&bold=true&size=128`;
+      
       // Persist session
       localStorage.setItem('igo_user', JSON.stringify({
         name: formData.name,
         email: formData.email,
+        avatar_url: avatarUrl,
         isAuthenticated: true
       }));
       
       // Sync to Supabase for persistent database storage
-      syncUserProfile(formData.email, formData.name);
+      syncUserProfile(formData.email, formData.name, avatarUrl);
+
 
       setTimeout(() => {
         onLoginSuccess();
@@ -194,23 +202,47 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
                     </div>
 
                     <div className="flex justify-center gap-3">
-                      {[1, 2, 3, 4].map((i) => (
+                      {otpValues.map((digit, idx) => (
                         <input 
-                          key={i}
+                          key={idx}
                           type="text"
                           maxLength={1}
                           required
+                          value={digit}
+                          onPaste={(e) => {
+                            const pasteData = e.clipboardData.getData('text').slice(0, 4);
+                            if (pasteData.length === 4) {
+                              const newValues = pasteData.split('');
+                              setOtpValues(newValues);
+                              // Auto-focus last box
+                              const inputs = e.currentTarget.parentElement?.querySelectorAll('input');
+                              (inputs?.[3] as HTMLInputElement)?.focus();
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace' && !digit && idx > 0) {
+                              const prev = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              if (prev) {
+                                prev.focus();
+                              }
+                            }
+                          }}
                           className="w-12 h-14 text-center font-display font-bold text-2xl bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-igo-green focus:bg-white transition-colors"
                           onChange={(e) => {
-                            if (e.target.value.length === 1 && i < 4) {
-                              const next = e.target.parentElement?.children[i] as HTMLInputElement;
+                            const val = e.target.value.replace(/[^0-9]/g, '').slice(-1);
+                            const newValues = [...otpValues];
+                            newValues[idx] = val;
+                            setOtpValues(newValues);
+                            
+                            if (val && idx < 3) {
+                              const next = e.currentTarget.nextElementSibling as HTMLInputElement;
                               if (next) next.focus();
                             }
-                            setFormData({...formData, otp: formData.otp + e.target.value});
                           }}
                         />
                       ))}
                     </div>
+
 
                     {showMockHint && (
                       <motion.div 

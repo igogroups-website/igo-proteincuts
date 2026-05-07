@@ -197,12 +197,13 @@ const Hero = () => {
           </div>
 
           <div className="flex flex-wrap gap-4 mb-6">
-            <a href="#products">
+            <a href="/#products">
               <button className="group bg-igo-green text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-igo-green/90 transition-all shadow-xl shadow-igo-green/20 active:scale-95">
                 Shop Fresh Now
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </a>
+
             <a href="#b2b">
               <button className="bg-white text-neutral-dark border-2 border-neutral-200 px-8 py-4 rounded-2xl font-bold hover:border-igo-gold hover:text-igo-gold transition-all active:scale-95">
                 B2B Bulk Orders

@@ -36,6 +36,30 @@ const testimonials = [
 ];
 
 const Testimonials = () => {
+  const [allTestimonials, setAllTestimonials] = React.useState(testimonials);
+
+  React.useEffect(() => {
+    const loadReviews = () => {
+      const liveReviews = JSON.parse(localStorage.getItem('igo_reviews') || '[]');
+      const formattedLive = liveReviews.map((r: any) => ({
+        id: r.id,
+        name: r.customerName,
+        role: 'Verified Customer',
+        content: r.comment,
+        rating: r.rating,
+        initials: r.customerName.split(' ').map((n: any) => n[0]).join(''),
+        color: 'from-igo-green to-igo-gold',
+        verified: true
+      }));
+      setAllTestimonials([...formattedLive, ...testimonials]);
+    };
+
+    loadReviews();
+    // Listen for changes in same tab
+    window.addEventListener('storage', loadReviews);
+    return () => window.removeEventListener('storage', loadReviews);
+  }, []);
+
   return (
     <section className="py-24 bg-white overflow-hidden relative">
       {/* Decorative Gradient Background */}
@@ -63,7 +87,7 @@ const Testimonials = () => {
         <div className="relative">
           <div className="flex gap-8 overflow-x-hidden py-10 group">
             {/* Double the list for infinite scroll effect */}
-            {[...testimonials, ...testimonials].map((t, i) => (
+            {[...allTestimonials, ...allTestimonials].map((t, i) => (
               <motion.div
                 key={`${t.name}-${i}`}
                 initial={{ opacity: 0 }}

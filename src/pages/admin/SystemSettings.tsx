@@ -25,8 +25,13 @@ const SettingSection = ({ title, description, children }: any) => (
 );
 
 const SystemSettings = () => {
-  const [announcement, setAnnouncement] = useState('Free delivery on orders above ₹499! Slaughtered fresh daily.');
-  const [isLive, setIsLive] = useState(true);
+  const [announcement, setAnnouncement] = useState(localStorage.getItem('igo_announcement') || 'Free delivery on orders above ₹499! Slaughtered fresh daily.');
+
+  const handleUpdateAnnouncement = () => {
+    localStorage.setItem('igo_announcement', announcement);
+    window.dispatchEvent(new CustomEvent('announcementUpdate', { detail: announcement }));
+    alert('Storefront announcement updated successfully!');
+  };
 
   return (
     <div className="max-w-4xl space-y-8 pb-12">
@@ -48,13 +53,17 @@ const SystemSettings = () => {
               onChange={(e) => setAnnouncement(e.target.value)}
               className="flex-1 px-4 py-3 bg-neutral-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-igo-green/20 transition-all"
             />
-            <button className="px-6 py-3 bg-igo-green text-white rounded-xl text-sm font-bold shadow-lg shadow-igo-green/20 hover:bg-igo-green/90 transition-all flex items-center gap-2">
+            <button 
+              onClick={handleUpdateAnnouncement}
+              className="px-6 py-3 bg-igo-green text-white rounded-xl text-sm font-bold shadow-lg shadow-igo-green/20 hover:bg-igo-green/90 transition-all flex items-center gap-2"
+            >
               <Save className="w-4 h-4" />
               Update
             </button>
           </div>
         </div>
       </SettingSection>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <SettingSection 

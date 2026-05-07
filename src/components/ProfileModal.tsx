@@ -10,17 +10,36 @@ interface ProfileModalProps {
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const [user, setUser] = React.useState<any>(null);
   const [activeView, setActiveView] = React.useState<'main' | 'orders' | 'addresses' | 'payments' | 'settings'>('main');
+  const [orders, setOrders] = React.useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = React.useState(false);
+
 
   useEffect(() => {
     const savedUser = localStorage.getItem('igo_user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        if (isOpen) fetchUserOrders(parsedUser.email);
       } catch (e) {
         console.error(e);
       }
     }
   }, [isOpen]);
+
+  const fetchUserOrders = async (email: string) => {
+    setIsLoadingOrders(true);
+    try {
+      const { getOrders } = await import('../services/orderService');
+      const data = await getOrders(email);
+      setOrders(data);
+    } catch (err) {
+      console.error('Failed to fetch user orders:', err);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -47,11 +66,12 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   }, [isOpen]);
 
   const menuItems = [
-    { id: 'orders', icon: Package, label: 'Order History', value: '3 Orders' },
+    { id: 'orders', icon: Package, label: 'Order History', value: orders.length > 0 ? `${orders.length} Orders` : 'No orders yet' },
     { id: 'addresses', icon: MapPin, label: 'Saved Addresses', value: 'Coimbatore, TN' },
     { id: 'payments', icon: CreditCard, label: 'Payment Methods', value: 'Saved Cards' },
     { id: 'settings', icon: Settings, label: 'Account Settings', value: null },
   ];
+
 
   const renderMainView = () => (
     <motion.div 
@@ -60,7 +80,8 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
       exit={{ opacity: 0, x: 20 }}
       className="flex flex-col h-full"
     >
-      <div className="p-4 flex flex-col gap-2 overflow-y-auto flex-1 custom-scrollbar">
+    <div className="p-4 flex flex-col gap-2 flex-1">
+
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -121,45 +142,142 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     </motion.div>
   );
 
+  const [selectedOrder, setSelectedOrder] = React.useState<any>(null);
+
   const renderOrdersView = () => (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="p-6 h-full flex flex-col"
     >
-      <button onClick={() => setActiveView('main')} className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors">
+      <button onClick={() => selectedOrder ? setSelectedOrder(null) : setActiveView('main')} className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-bold">Back to Profile</span>
+        <span className="text-sm font-bold">{selectedOrder ? 'Back to History' : 'Back to Profile'}</span>
       </button>
       
-      <h3 className="text-xl font-display font-bold text-white mb-6">Recent Orders</h3>
+      <h3 className="text-xl font-display font-bold text-white mb-6">
+        {selectedOrder ? `Order #${selectedOrder.id.slice(0, 8)}` : 'Order History'}
+      </h3>
       
-      <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
-        {[
-          { id: '#IGO-8821', date: 'Today, 2:30 PM', status: 'Delivered', items: 'Chicken Breast, Mutton Chops', total: '₹842' },
-          { id: '#IGO-8712', date: '24 May, 2026', status: 'Delivered', items: 'Tiger Prawns, Vanjaram', total: '₹1,240' },
-          { id: '#IGO-8645', date: '18 May, 2026', status: 'Delivered', items: 'Farm Eggs (12pcs)', total: '₹120' },
-        ].map(order => (
-          <div key={order.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="text-[10px] font-bold text-igo-green uppercase">{order.id}</p>
-                <p className="text-xs text-white/40">{order.date}</p>
+      <div className="space-y-4 flex-1 pr-2 min-h-[200px]">
+        {isLoadingOrders ? (
+          <div className="py-20 text-center text-white/30 italic">Loading your fresh history...</div>
+        ) : orders.length === 0 ? (
+          <div className="py-20 text-center text-white/30 italic">No orders found yet. Start shopping!</div>
+        ) : selectedOrder ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Status Timeline */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex justify-between items-center mb-6">
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                  selectedOrder.status === 'Delivered' ? 'bg-green-500/20 text-green-400' : 'bg-igo-gold/20 text-igo-gold'
+                }`}>
+                  {selectedOrder.status}
+                </span>
+                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                  {new Date(selectedOrder.created_at).toLocaleDateString()}
+                </p>
               </div>
-              <span className="px-2 py-1 bg-igo-green/20 text-igo-green text-[10px] font-bold rounded-lg uppercase">
-                {order.status}
-              </span>
+              
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-igo-green/20 flex items-center justify-center border border-igo-green/30">
+                    <CheckCircle2 className="w-3 h-3 text-igo-green" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Order Placed</p>
+                    <p className="text-[10px] text-white/40">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                {selectedOrder.status === 'Delivered' && (
+                  <div className="flex gap-3">
+                    <div className="w-6 h-6 rounded-full bg-igo-green flex items-center justify-center shadow-lg shadow-igo-green/20">
+                      <CheckCircle2 className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Delivered Successfully</p>
+                      <p className="text-[10px] text-white/40">{selectedOrder.delivered_at ? new Date(selectedOrder.delivered_at).toLocaleString() : 'Just now'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-white font-medium mb-2">{order.items}</p>
-            <div className="flex justify-between items-center border-t border-white/5 pt-2">
-              <span className="text-xs text-white/40">Total Amount</span>
-              <span className="text-sm font-bold text-white">{order.total}</span>
+
+            {/* Delivery Details */}
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Shipping Intelligence</h4>
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-igo-gold mt-1" />
+                <div>
+                  <p className="text-[10px] text-white/40 font-bold uppercase mb-1">Delivered To</p>
+                  <p className="text-sm text-white/80 leading-relaxed font-medium">
+                    {selectedOrder.delivery_address || 'Default Address'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+
+            {/* Items */}
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Package Contents</h4>
+              <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+                {selectedOrder.items?.map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center p-4 border-b border-white/5 last:border-0">
+                    <div>
+                      <p className="text-sm font-bold text-white">{item.name}</p>
+                      <p className="text-[10px] text-white/40">{item.weight} × {item.quantity}</p>
+                    </div>
+                    <p className="text-sm font-bold text-white">₹{item.price * item.quantity}</p>
+                  </div>
+                ))}
+                <div className="bg-white/10 p-4 flex justify-between items-center">
+                  <span className="text-xs font-bold text-white/50">Total Paid</span>
+                  <span className="text-lg font-display font-bold text-igo-green">₹{selectedOrder.amount}</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          orders.map(order => (
+            <button 
+              key={order.id} 
+              onClick={() => setSelectedOrder(order)}
+              className="w-full text-left bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors group"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-[10px] font-bold text-igo-green uppercase">#{order.id.slice(0, 8)}</p>
+                  <p className="text-xs text-white/40">{new Date(order.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                    order.status === 'Delivered' ? 'bg-green-500/20 text-green-400' :
+                    order.status === 'Processing' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-orange-500/20 text-orange-400'
+                  }`}>
+                    {order.status}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-igo-green group-hover:translate-x-1 transition-all" />
+                </div>
+              </div>
+              <p className="text-sm text-white font-medium mb-2 truncate">
+                {order.items?.map((i: any) => i.name).join(', ') || 'Fresh Cuts'}
+              </p>
+              <div className="flex justify-between items-center border-t border-white/5 pt-2">
+                <span className="text-xs text-white/40">Total Amount</span>
+                <span className="text-sm font-bold text-white">₹{order.amount}</span>
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </motion.div>
   );
+
 
   const renderAddressesView = () => (
     <motion.div 
@@ -212,19 +330,24 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md h-[600px] max-h-[90vh] bg-neutral-dark rounded-[2rem] overflow-hidden shadow-2xl z-[100] flex flex-col"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md h-auto max-h-[85vh] bg-neutral-dark rounded-[2rem] overflow-hidden shadow-2xl z-[100] flex flex-col"
           >
             {/* Thematic Background */}
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1607116176195-b81b1f41f536?w=600')] bg-cover bg-center opacity-10 mix-blend-luminosity pointer-events-none" />
             <div className="absolute inset-0 bg-gradient-to-t from-neutral-dark via-neutral-dark/95 to-neutral-dark/80 pointer-events-none" />
             
-            <div className="relative z-10 flex flex-col h-full">
-              {/* Header */}
-              <div className="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-neutral-dark/80 backdrop-blur-md">
+            <div className="relative z-10 flex flex-col h-full max-h-[85vh]">
+              {/* Header - Sticky */}
+              <div className="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-neutral-dark/80 backdrop-blur-md z-20">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-igo-green flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-igo-green/20 border-2 border-white/20 uppercase">
-                    {user?.name ? getInitials(user.name) : 'PC'}
+                  <div className="w-20 h-20 rounded-full bg-igo-green flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-igo-green/20 border-4 border-white/20 uppercase overflow-hidden">
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.name ? getInitials(user.name) : 'PC'
+                    )}
                   </div>
+
                   <div>
                     <h2 className="text-xl font-display font-bold text-white">{user?.name || 'Protein Cuts User'}</h2>
                     <p className="text-sm text-igo-gold font-bold flex items-center gap-1 mt-1">
@@ -241,8 +364,9 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 </button>
               </div>
 
-              {/* Main Viewport */}
-              <div className="flex-1 overflow-hidden">
+              {/* Main Viewport - Scrollable */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+
                 <AnimatePresence mode="wait">
                   {activeView === 'main' && renderMainView()}
                   {activeView === 'orders' && renderOrdersView()}
@@ -255,6 +379,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                   )}
                 </AnimatePresence>
               </div>
+
             </div>
           </motion.div>
         </>

@@ -10,10 +10,19 @@ const areas = [
 const DeliveryBar = () => {
   const [selectedArea, setSelectedArea] = useState('Coimbatore');
   const [isOpen, setIsOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState(localStorage.getItem('igo_announcement') || 'Slaughtered fresh daily. Delivered within 90 mins.');
+
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      setAnnouncement((e as CustomEvent).detail);
+    };
+    window.addEventListener('announcementUpdate', handler);
+    return () => window.removeEventListener('announcementUpdate', handler);
+  }, []);
 
   return (
     <div className="relative bg-neutral-dark text-white py-2 px-4 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 text-xs">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 text-[10px] sm:text-xs">
         {/* Location */}
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -25,20 +34,19 @@ const DeliveryBar = () => {
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
+        {/* Dynamic Announcement */}
+        <div className="flex-1 text-center truncate px-4 text-white/80 font-medium">
+          {announcement}
+        </div>
+
         {/* Delivery Time */}
         <div className="flex items-center gap-2 text-white/70">
           <div className="w-2 h-2 rounded-full bg-igo-green animate-pulse" />
           <Clock className="w-3.5 h-3.5 text-igo-green" />
-          <span className="hidden sm:inline">Delivery in</span>
-          <span className="font-bold text-igo-green">60-90 mins</span>
-        </div>
-
-        {/* Promo */}
-        <div className="hidden md:flex items-center gap-2 text-white/60">
-          <span>🎉</span>
-          <span>First order? Use code <span className="font-bold text-igo-gold">IGOFRESH15</span> for 15% off!</span>
+          <span className="hidden sm:inline font-bold text-igo-green">60-90 mins</span>
         </div>
       </div>
+
 
       {/* Area Dropdown */}
       <AnimatePresence>

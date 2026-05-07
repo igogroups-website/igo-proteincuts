@@ -148,18 +148,21 @@ const ProductGrid = () => {
                       className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-400 flex flex-col"
                     >
                     {/* Image Area */}
-                    <div className="relative aspect-square overflow-hidden bg-neutral-100">
+                    <div 
+                      className="relative aspect-square overflow-hidden bg-neutral-100 cursor-pointer group/img"
+                      onClick={() => setQuickViewProduct(product)}
+                    >
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
+                        className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1607623814075-e512199b4472?auto=format&fit=crop&q=80&w=800';
                         }}
                       />
 
                       {/* Badges */}
-                      <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${product.isPremium ? 'bg-igo-gold' : 'bg-igo-green'}`}>
                           {product.badge}
                         </span>
@@ -172,7 +175,7 @@ const ProductGrid = () => {
 
                       {/* Stock / Hot Badge */}
                       {product.stockLeft && product.stockLeft < 5 && (
-                        <div className="absolute top-3 right-10 flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                        <div className="absolute top-3 right-10 flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">
                           <Flame className="w-3 h-3" />
                           {product.stockLeft}kg left
                         </div>
@@ -180,25 +183,26 @@ const ProductGrid = () => {
 
                       {/* Wishlist */}
                       <button
-                        onClick={() => toggleWishlist(product.id)}
-                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWishlist(product.id);
+                        }}
+                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all z-20 ${
                           isWishlisted ? 'bg-red-500 text-white' : 'bg-white/90 text-neutral-400 hover:text-red-400'
                         }`}
                       >
                         <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-white' : ''}`} />
                       </button>
 
-                      {/* Quick View Overlay */}
-                      <div className="absolute inset-0 bg-neutral-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <button
-                          onClick={() => setQuickViewProduct(product)}
-                          className="bg-white text-neutral-dark px-5 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-igo-green hover:text-white transition-colors shadow-xl"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Quick View
-                        </button>
+                      {/* Overlay Indicator */}
+                      <div className="absolute inset-0 bg-neutral-dark/10 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="bg-white/90 backdrop-blur-sm text-neutral-dark px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                          <Eye className="w-3 h-3" />
+                          View Details
+                        </div>
                       </div>
                     </div>
+
 
                     {/* Info */}
                     <div className="p-5 flex flex-col flex-1">

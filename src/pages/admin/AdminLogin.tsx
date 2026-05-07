@@ -16,7 +16,7 @@ const AdminLogin = () => {
 
     // Simulate network delay
     setTimeout(() => {
-      if (password === 'mytram Admin@123') {
+      if (password === 'Admin@123') {
         localStorage.setItem('admin_auth', 'true');
         navigate('/admin/dashboard');
       } else {

@@ -1,34 +1,56 @@
 /**
  * Product Store
- * localStorage-based reactive product store.
- * Admin changes are saved here and broadcast to all listeners via custom events.
+ * localStorage-based reactive product store with versioning.
+ * If the stored data version doesn't match, it resets to static products.
+ * Admin changes broadcast to all listeners via custom events AND storage events.
  */
 
 import { Product } from '../types/product';
 import { staticProducts } from '../data/staticProducts';
 
 const STORE_KEY = 'igo_products';
+const VERSION_KEY = 'igo_products_version';
+const STORE_VERSION = 'v2'; // bump this to force a data reset
 const UPDATE_EVENT = 'igo_products_updated';
 
-/** Load products from localStorage, fallback to static data */
+/** Returns true if stored data is valid for current version */
+const isVersionValid = (): boolean => {
+  return localStorage.getItem(VERSION_KEY) === STORE_VERSION;
+};
+
+/** Load products from localStorage, fallback to static data on any error or version mismatch */
 export const loadProducts = (): Product[] => {
   try {
+    if (!isVersionValid()) {
+      // Version mismatch — reset to fresh static data
+      console.log('productStore: version mismatch, resetting to static products');
+      saveProducts(staticProducts);
+      return staticProducts;
+    }
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Product[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Sanity check: ensure products have expected fields
+        const isValid = parsed.every(
+          p => typeof p.id === 'number' && typeof p.name === 'string' && typeof p.price === 'number'
+        );
+        if (isValid) return parsed;
+      }
     }
   } catch (e) {
     console.warn('productStore: failed to parse localStorage', e);
   }
-  // First run – seed from static data and persist
+  // Fallback — seed from static data and persist
   saveProducts(staticProducts);
   return staticProducts;
 };
 
 /** Persist products array to localStorage and broadcast change event */
 export const saveProducts = (products: Product[]): void => {
+  localStorage.setItem(VERSION_KEY, STORE_VERSION);
   localStorage.setItem(STORE_KEY, JSON.stringify(products));
+  // Dispatch custom event for same-tab listeners
   window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: products }));
 };
 
@@ -54,13 +76,36 @@ export const removeProduct = (id: number): Product[] => {
   return next;
 };
 
-/** Subscribe to product changes. Returns unsubscribe fn. */
+/** Force reset all products back to static defaults */
+export const resetToDefaults = (): Product[] => {
+  saveProducts(staticProducts);
+  return staticProducts;
+};
+
+/**
+ * Subscribe to product changes.
+ * Listens to both custom events (same tab) and storage events (cross-tab).
+ * Returns unsubscribe fn.
+ */
 export const subscribeToProducts = (cb: (products: Product[]) => void): (() => void) => {
-  const handler = (e: Event) => {
+  const customHandler = (e: Event) => {
     cb((e as CustomEvent<Product[]>).detail);
   };
-  window.addEventListener(UPDATE_EVENT, handler);
-  return () => window.removeEventListener(UPDATE_EVENT, handler);
+  // storage event fires when ANOTHER tab updates localStorage
+  const storageHandler = (e: StorageEvent) => {
+    if (e.key === STORE_KEY && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue) as Product[];
+        if (Array.isArray(parsed)) cb(parsed);
+      } catch {}
+    }
+  };
+  window.addEventListener(UPDATE_EVENT, customHandler);
+  window.addEventListener('storage', storageHandler);
+  return () => {
+    window.removeEventListener(UPDATE_EVENT, customHandler);
+    window.removeEventListener('storage', storageHandler);
+  };
 };
 
 /** Convert a File to a base64 data URL */
